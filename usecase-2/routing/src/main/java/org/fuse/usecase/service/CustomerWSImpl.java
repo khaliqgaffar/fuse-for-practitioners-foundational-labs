@@ -39,20 +39,26 @@ public class CustomerWSImpl implements CustomerWS {
     @WebResult(name = "CorporateAccount")
     @SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
     public CorporateAccount updateAccount(Account account) {
+    	System.out.println("Update Account Being Called");
         CorporateAccount ca = new CorporateAccount();
-
-
+        ca.setCompany(account.getCompany());
+        ca.setContact(account.getContact());
+        ca.setId(CustomerWSImpl.genRandom());
+        ca.setSalesContact("James Strachan");
         return ca;
     }
 
     public static int genRandom() {
         return new Random().nextInt(100);
     }
-
-    public static String getRandomSales(List<String> list) {
-        //0-11
-        int index = new Random().nextInt(list.size());
-        return list.get(index);
-    }
+//
+//    public static String getRandomSales(List<String> list) {
+//    	System.out.println("get Random Sales");
+//        //0-11
+//        int index = new Random().nextInt(list.size());
+//        System.out.println(index);
+//        //System.out.println(list.get(index));
+//        return list.get(0);
+//    }
 
 }

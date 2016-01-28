@@ -1,0 +1,11 @@
+#Tue Jan 26 12:29:03 CET 2016
+vl=How many times the 'Finish' button pressed during the day
+l=Wizard class name
+ct=jbt
+d=1453807743424
+c=0
+cmp=usage
+a=finishWizard
+cl=org.jboss.tools.fuse.transformation.editor.wizards.NewTransformationWizard
+v=2.0.2
+s=1

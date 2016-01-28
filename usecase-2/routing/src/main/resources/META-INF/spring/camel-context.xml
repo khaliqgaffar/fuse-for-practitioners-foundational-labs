@@ -9,30 +9,53 @@
        http://camel.apache.org/schema/cxf/camel-cxf-spring.xsd
        http://camel.apache.org/schema/spring
        http://camel.apache.org/schema/spring/camel-spring.xsd">
+	<!-- H2 Datasource -->
+	<bean id="usecaseDB"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.h2.Driver" />
+		<property name="url" value="jdbc:h2:tcp://localhost/~/usecaseDB" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
 
-    <!-- H2 Datasource -->
-    <bean id="usecaseDB" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="org.h2.Driver"/>
-        <property name="url" value="jdbc:h2:tcp://localhost/~/usecaseDB"/>
-        <property name="username" value="sa"/>
-        <property name="password" value=""/>
-    </bean>
+	<!-- SQL Component -->
+	<bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
 
-    <!-- SQL Component -->
-    <bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
+	</bean>
+	<bean id="customerRestImpl" class="org.fuse.usecase.service.CustomerRestImpl"></bean>
+	
+	<bean id="customerWsImpl" class="org.fuse.usecase.service.CustomerWSImpl"></bean>
 
-    </bean>
+	<bean id="jsonProvider"
+		class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider" />
 
-    <cxf:cxfEndpoint id="customerWebService">
-    </cxf:cxfEndpoint>
 
-    <cxf:rsServer id="customerRestService">
-    </cxf:rsServer>
+	<cxf:cxfEndpoint id="customerWebService"
+		address="http://localhost:9090/ws/customerService" serviceClass="org.fuse.usecase.service.CustomerWS"
+		loggingFeatureEnabled="false">
+	</cxf:cxfEndpoint>
 
-    <cxf:rsClient id="customerRestServiceClient">
-    </cxf:rsClient>
+	<cxf:rsServer id="customerRestService" address="http://localhost:9191/rest"
+		serviceClass="org.fuse.usecase.service.CustomerRest"
+		loggingFeatureEnabled="false">
+		<cxf:providers>
+			<ref bean="jsonProvider" />
+		</cxf:providers>
+	</cxf:rsServer>
 
-    <camelContext trace="false" xmlns="http://camel.apache.org/schema/spring">
-        <propertyPlaceholder id="properties" location="fabric8/route.properties"/>
-    </camelContext>
+
+<camelContext trace="false" xmlns="http://camel.apache.org/schema/spring">
+  <propertyPlaceholder location="fabric8/route.properties" id="properties"/>
+  <route id="restService">
+    <from uri="cxfrs:bean:customerRestService"/>
+    <bean ref="customerRestImpl"/>
+    <log message="${body}"/>
+  </route>
+  
+  <route id="wsService">
+    <from uri="cxf:bean:customerWebService"/>
+    <bean ref="customerWsImpl"/>
+    <log message="${body}"/>
+  </route>
+</camelContext>
 </beans>

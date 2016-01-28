@@ -1,5 +1,8 @@
 package org.globex.globex;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "Contact")
 public class Contact {
 
     private String firstName;

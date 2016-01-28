@@ -19,13 +19,19 @@ import java.util.Map;
 public class ProcessorBean {
 
     public void convertEntityToString(Exchange exchange) throws IOException {
-        int c;
-        StringBuffer buf = new StringBuffer();
-        String response = null;
+    	 int c;
+         StringBuffer buf = new StringBuffer();
+         String response = null;
 
-
-
-        exchange.getIn().setBody(response);
+         Message msg = exchange.getIn();
+         ResponseImpl resp = (ResponseImpl)msg.getBody();
+         InputStream stream = (InputStream) resp.getEntity();
+         while ((c = stream.read()) != -1) {
+             buf.append((char) c);
+         }
+         stream.close();
+         response = buf.toString();
+         exchange.getIn().setBody(response);
     }
 
     public Map<String, Object> defineNamedParameters(@Body Account ac) {

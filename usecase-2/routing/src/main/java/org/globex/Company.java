@@ -2,7 +2,13 @@ package org.globex;
 
 public class Company {
 
-    private String name;
+    @Override
+	public String toString() {
+		return "Company [name=" + name + ", geo=" + geo + ", active=" + active
+				+ "]";
+	}
+
+	private String name;
     private String geo;
     private boolean active;
 

@@ -1,10 +1,7 @@
 package org.fuse.usecase.service;
 
-import org.acme.Customer;
 import org.globex.Account;
 import org.globex.Company;
-
-import java.util.Random;
 
 public class CustomerRestImpl implements CustomerRest {
 
@@ -16,8 +13,26 @@ public class CustomerRestImpl implements CustomerRest {
     @Override
     public Account enrich(Account account) {
         Company company = account.getCompany();
-        String region = company.getGeo();
+        Region region = Region.valueOf(company.getGeo());
+         
+        switch (region) {
+		case NA:
+			company.setGeo(NA_REGION);
+			break;
+		case SA:
+			company.setGeo(SA_REGION);
+			break;
+		case WA:
+			company.setGeo(WE_REGION);
+			break;
+		case EA:
+			company.setGeo(EAST_REGION);
+			break;
 
+		default:
+			break;
+		}
+        
 
         return account;
     }

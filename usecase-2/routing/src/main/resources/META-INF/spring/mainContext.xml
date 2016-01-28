@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:camel="http://camel.apache.org/schema/spring" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:cxf="http://camel.apache.org/schema/cxf"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/cxf
+       http://camel.apache.org/schema/cxf/camel-cxf-spring.xsd
+       http://camel.apache.org/schema/spring
+       http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<bean id="usecaseDB"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.h2.Driver" />
+		<property name="url" value="jdbc:h2:tcp://localhost/~/usecaseDB" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
+
+	<!-- SQL Component -->
+	<bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
+		<property name="dataSource" ref="usecaseDB" />
+	</bean>
+
+
+	<bean id="customerRestImpl" class="org.fuse.usecase.service.CustomerRestImpl"></bean>
+	<bean id="customerWsImpl" class="org.fuse.usecase.service.CustomerWSImpl"></bean>
+	<bean id="accountAggregator" class="org.fuse.usecase.AccountAggregator" />
+	<bean id="processorBean" class="org.fuse.usecase.ProcessorBean" />
+
+	<bean id="jsonProvider"
+		class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider" />
+
+	<cxf:rsClient id="customerRestServiceClient"
+		address="http://localhost:9191/rest/customerservice/enrich"
+		loggingFeatureEnabled="true">
+		<cxf:providers>
+			<ref bean="jsonProvider" />
+		</cxf:providers>
+	</cxf:rsClient>
+
+	<cxf:cxfEndpoint id="customerWebServiceEndpoint"
+		address="http://localhost:9090/ws/customerService" serviceClass="org.fuse.usecase.service.CustomerWS"
+		loggingFeatureEnabled="true">
+	</cxf:cxfEndpoint>
+
+
+	<camelContext trace="false"
+		xmlns="http://camel.apache.org/schema/spring">
+		<propertyPlaceholder location="fabric8/route.properties"
+			id="properties" />
+		<route id="mainRoute">
+			<from uri="file:src/data/inbox?fileName=account.json&amp;noop=true" />
+			<unmarshal>
+				<json library="Jackson" unmarshalTypeName="org.globex.Account" />
+			</unmarshal>
+			<log message="${body}" />
+			
+			<multicast strategyRef="accountAggregator">
+				<to uri="direct:callrestendpoint" />
+				<to uri="direct:callWSEndpoint" />
+			</multicast>
+			
+			<to uri="direct:insertDB" />
+		</route>
+		<route id="callRestEndpoint">
+			<from uri="direct:callrestendpoint" />
+			<log message="callrestendpoint" />
+			<setHeader headerName="Content-Type">
+				<constant>application/json</constant>
+			</setHeader>
+			<setHeader headerName="Accept">
+				<constant>application/json</constant>
+			</setHeader>
+			<setHeader headerName="CamelHttpMethod">
+				<constant>POST</constant>
+			</setHeader>
+			<setHeader headerName="CamelCxfRsUsingHttpAPI">
+				<constant>True</constant>
+			</setHeader>
+			<setHeader headerName="originalBody">
+				<simple>${body}</simple>
+			</setHeader>
+			<inOut uri="cxfrs://bean://customerRestServiceClient" />
+			<bean beanType="org.fuse.usecase.ProcessorBean" method="convertEntityToString" />
+			
+			<unmarshal>
+				<json library="Jackson" unmarshalTypeName="org.globex.Account" />
+			</unmarshal>
+			<!-- <to uri="cxfrs://bean://customerRestServiceClient?exchangePattern=InOut" 
+				/> -->
+
+			<log message="after Rest Service call ${body}" />
+		</route>
+		
+		<route id="callWSEndpoint">
+			<from uri="direct:callWSEndpoint" />
+			<to
+				uri="cxf:bean:customerWebServiceEndpoint?defaultOperationName=updateAccount" />
+			<log message="after WebService call ${body}" />
+		</route>
+
+		<route id="saveDB">
+			<from uri="direct:insertDB" />
+			<to uri="bean:processorBean?method=defineNamedParameters" />
+			<log message="Bean Type ${body}" />
+			<to uri="sql:{{sql.insertAccount}}" />
+			<log message="Inserted new order ${body[id]}" />
+
+		</route>
+	</camelContext>
+
+</beans>

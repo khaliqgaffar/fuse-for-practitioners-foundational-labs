@@ -2,7 +2,14 @@ package org.globex;
 
 public class Contact {
 
-    private String firstName;
+    @Override
+	public String toString() {
+		return "Contact [firstName=" + firstName + ", lastName=" + lastName
+				+ ", streetAddr=" + streetAddr + ", city=" + city + ", state="
+				+ state + ", zip=" + zip + ", phone=" + phone + "]";
+	}
+
+	private String firstName;
     private String lastName;
     private String streetAddr;
     private String city;

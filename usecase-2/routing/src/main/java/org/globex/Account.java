@@ -2,7 +2,14 @@ package org.globex;
 
 public class Account {
 
-    private Company company;
+    @Override
+	public String toString() {
+		return "Account [company=" + company + ", contact=" + contact
+				+ ", clientId=" + clientId + ", salesRepresentative="
+				+ salesRepresentative + "]";
+	}
+
+	private Company company;
     private Contact contact;
     private int clientId;
     private String salesRepresentative;

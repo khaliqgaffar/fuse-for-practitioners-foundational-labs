@@ -25,6 +25,8 @@ config/templates/_temp.yaml
 .project
 .settings/
 styles/
+target/
+bin/
 
 **/src/data/error
 **/src/data/outbox
