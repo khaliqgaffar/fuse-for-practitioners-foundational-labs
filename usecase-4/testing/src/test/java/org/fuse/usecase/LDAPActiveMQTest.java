@@ -21,7 +21,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 @RunWith(FrameworkRunner.class) @CreateLdapServer(transports = {
-        @CreateTransport(protocol = "LDAP", port = 1024) }) @ApplyLdifFiles("org/fuse/usecase/activemq.ldif") public class LDAPActiveMQTest
+        @CreateTransport(protocol = "LDAP", port = 33389) }) @ApplyLdifFiles("org/fuse/usecase/activemq.ldif") 
+		public class LDAPActiveMQTest
         extends AbstractLdapTestUnit {
 
     public BrokerService broker;
@@ -45,11 +46,37 @@ import static org.junit.Assert.fail;
     }
 
     @Test public void testCreateQueuePublishConsume() throws Exception {
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("vm://localhost");
 
+        Connection conn = factory.createQueueConnection("jdoe", "sunflower");
+        Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        conn.start();
+        Queue queue = sess.createQueue("usecase-input");
+
+        MessageProducer producer = sess.createProducer(queue);
+        MessageConsumer consumer = sess.createConsumer(queue);
+
+        producer.send(sess.createTextMessage("test"));
+        Message msg = consumer.receive(1000);
+        assertNotNull(msg);
+        conn.stop();
+        sess.close();
     }
 
     @Test public void testFailCreateQueuePublishConsume() throws Exception {
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("vm://localhost");
+        try {
+            Connection conn = factory.createQueueConnection("jdoe", "sunflower");
+            Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            conn.start();
+            Queue queue = sess.createQueue("TEST.FOOOO");
 
+            MessageProducer producer = sess.createProducer(queue);
+            fail("Expected JMSException");
+        } catch (Exception e) {
+            assertEquals("User jdoe is not authorized to write to: queue://TEST.FOOOO", e.getMessage());
+            return;
+        }
     }
 
 }
